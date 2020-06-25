@@ -1,19 +1,70 @@
 <?php
-
+require_once( '/wamp/www/CodFlix/ec-code-2020-codflix-php/model/database.php' );
+$db   = init_db();
+error_reporting(E_ALL);
+ini_set('display_errors', 1);
 $key = "0912a7966c27b25ddc987f88847cdf97";
-$movieId= '553';
-$json = file_get_contents("https://api.themoviedb.org/3/movie/$movieId?api_key=$key");
+//$movieId= '574';
 
-$result = json_decode($json, true);
+$json = file_get_contents("https://api.themoviedb.org/3/movie/571?api_key=0912a7966c27b25ddc987f88847cdf97");
 
-$poster_path = $result["poster_path"];
-$gender = $result["genres"][0]["name"];
-$title = $result["original_title"];
-$release = $result["release_date"];
-$vote_count = $result["vote_count"];
-var_dump($gender);
-var_dump($title);
-var_dump($release);
-var_dump('nbVote: '.$vote_count);
-echo $gender . 'ICI';
-echo "<img src=\"https://image.tmdb.org/t/p/w500$poster_path\">";
+for ($movieId=0; $movieId  <500;$movieId++){
+	$json = file_get_contents("https://api.themoviedb.org/3/movie/$movieId?api_key=$key&language=en-US&page=1");
+	$result = json_decode($json, true);
+
+	// -------Remplissage tab genre-----------//
+	$req = $db->prepare('INSERT INTO genre (name, id) VALUES(:name , :id)');
+	for($i = 0; $i < count($result["genres"]) ; $i++) {
+		$genre = $result["genres"][$i];
+		try {
+			$req->bindValue(':name', $genre["name"], PDO::PARAM_STR);
+			$req->bindValue(':id', $genre["id"], PDO::PARAM_INT);
+			$req->execute();
+			var_dump($req->errorInfo());
+		} catch(PDOException $e) {
+			echo $e->getMessmeage();
+		}
+	}
+
+}
+$json = file_get_contents("https://api.themoviedb.org/3/movie/popular?api_key=$key&language=en-US&page=1"); // recup les films les plus polulaire
+
+
+
+	// -------Remplissage tab media-----------//
+for ($movieId=0;$movieId<300;$movieId++){
+	$json = file_get_contents("https://api.themoviedb.org/3/movie/$movieId?api_key=$key");
+	var_dump("https://api.themoviedb.org/3/movie/$movieId?api_key=$key");
+	$result = json_decode($json, true);
+	if (isset($result['original_title'])){
+		$titre = $result['original_title'];
+		$genre_id = $result['genres'][0]['id'];
+		$poster = 'https://image.tmdb.org/t/p/w500/' . $result['backdrop_path'];
+		$type = 'movie';
+		$status = $result['status'];
+		$release = $result['release_date'];
+		$vote_count = $result['vote_count'];
+		$vote_avertage = $result['vote_average'];
+		$summary = $result['overview'];
+		$runtime = $result['runtime'];
+		$trailer_url = NULL;
+	//Var_dump
+//		var_dump('$titre: ' . $titre);
+//		var_dump('$genre_id: ' . $genre_id);
+//		var_dump('$poster: ' . $poster);
+//		var_dump('$type: ' . $type);
+//		var_dump('$status: ' . $status);
+//		var_dump('$release: ' . $release);
+//		var_dump('$vote_count: ' . $vote_count);
+//		var_dump('$vote_avertage: ' . $vote_avertage);
+//		var_dump('$summary: ' . $summary);
+//		var_dump('$runtime: ' . $runtime);
+//		var_dump('$trailer_url: ' . $trailer_url);
+		$reqInsert = "INSERT INTO media (genre_id, title, poster, type, status, release_date, vote_count, vote_avertage, summary, runtime, trailer_url) VALUES ('$genre_id','$titre','$poster','$type','$status','$release','$vote_count','$vote_avertage','$summary','$runtime','$trailer_url')";
+		$sqlInsert = $db->prepare($reqInsert);
+		$sqlInsert->execute();
+	}else{
+		$movieId=$movieId++;
+	}
+}
+

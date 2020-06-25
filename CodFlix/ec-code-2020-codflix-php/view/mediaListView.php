@@ -1,6 +1,16 @@
-<?php ob_start(); ?>
+<?php ob_start();
+require_once( '/wamp/www/CodFlix/ec-code-2020-codflix-php/model/database.php' );
+$db   = init_db();
+$pdoMovie = 'SELECT * FROM  media';
+$sqlMovie = $db -> prepare($pdoMovie);
+$sqlMovie -> execute();
 
-<div class="row">
+$medias = $sqlMovie->fetchAll(PDO::FETCH_ASSOC);
+//$medias = $pdoMovie->fetchAll();
+// var_dump($x['id']);
+?>
+
+<div class="row"><!--Movie search-->
     <div class="col-md-4 offset-md-8">
         <form method="get">
             <div class="form-group has-btn">
